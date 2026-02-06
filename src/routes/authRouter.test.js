@@ -21,6 +21,21 @@ test("login", async () => {
 	expect(loginRes.body.user).toMatchObject(expectedUser);
 });
 
+test("fail login", async () => {
+	const loginRes = await request(app)
+		.put("/api/auth")
+		.send({ email: testUser.email, password: "wrongpassword" });
+	expect(loginRes.status).not.toBe(200);
+});
+
+test("logout", async () => {
+	const logoutRes = await request(app)
+		.delete("/api/auth/")
+		.set("Authorization", `Bearer ${testUserAuthToken}`);
+	expect(logoutRes.status).toBe(200);
+	expect(logoutRes.body).toMatchObject({ message: "logout successful" });
+});
+
 function expectValidJwt(potentialJwt) {
 	expect(potentialJwt).toMatch(
 		/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/,
