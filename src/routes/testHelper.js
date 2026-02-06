@@ -44,10 +44,30 @@ function randomName() {
 	return Math.random().toString(36).substring(2, 12);
 }
 
+async function createOrder(userToken) {
+	const orderData = {
+		franchiseId: 1,
+		storeId: 1,
+		items: [
+			{
+				menuId: 1,
+				description: "Veggie Pizza",
+				price: 0.05,
+			},
+		],
+	};
+	const response = await request(app)
+		.post("/api/order")
+		.set("Authorization", `Bearer ${userToken}`)
+		.send(orderData);
+	return response.body;
+}
+
 module.exports = {
 	createAdminUser,
 	createRegularUser,
 	createFranchise,
 	getAdminToken,
 	randomName,
+	createOrder,
 };
