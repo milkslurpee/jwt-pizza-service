@@ -1,16 +1,32 @@
 {
-  "name": "jwt-pizza-service",
-  "description": "Backend service for making JWT pizzas",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "cd src && node index.js"
-  },
-  "license": "MIT",
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "express": "^4.22.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.16.0"
-  }
+	"name": "jwt-pizza-service",
+	"description": "Backend service for making JWT pizzas",
+	"version": "1.0.0",
+	"main": "index.js",
+	"license": "MIT",
+	"dependencies": {
+		"bcrypt": "^5.1.1",
+		"express": "^4.22.1",
+		"jsonwebtoken": "^9.0.3",
+		"mysql2": "^3.16.0"
+	},
+	"devDependencies": {
+		"jest": "^29.7.0",
+		"supertest": "^6.3.4"
+	},
+	"scripts": {
+    "start": "cd src && node index.js",
+    "test": "jest",
+    "lint": "eslint ."
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/milkslurpee/jwt-pizza-service.git"
+	},
+	"keywords": [],
+	"author": "",
+	"bugs": {
+		"url": "https://github.com/milkslurpee/jwt-pizza-service/issues"
+	},
+	"homepage": "https://github.com/milkslurpee/jwt-pizza-service#readme"
 }
