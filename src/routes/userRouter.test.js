@@ -1,14 +1,10 @@
 const request = require("supertest");
 const app = require("../service");
 
-const {
-	createAdminUser,
-	createRegularUser,
-	getAdminToken,
-} = require("./testHelper.js");
+const { createRegularUser, getAdminToken } = require("./testHelper.js");
 
 const testUser = { name: "pizza diner", email: "reg@test.com", password: "a" };
-let adminUser, adminToken, regularUser, normieToken;
+let regularUser, normieToken;
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	jest.setTimeout(60 * 1000 * 5); // 5 minutes
@@ -30,8 +26,6 @@ test("change user", async () => {
 });
 
 beforeAll(async () => {
-	adminUser = await createAdminUser();
 	regularUser = await createRegularUser();
-	adminToken = await getAdminToken(adminUser);
 	normieToken = await getAdminToken(regularUser);
 });
