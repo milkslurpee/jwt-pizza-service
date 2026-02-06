@@ -35,7 +35,6 @@ test("add item to menu", async () => {
 });
 
 test("get patron's order history", async () => {
-	const order = await createOrder(normieToken);
 	const getOrders = await request(app)
 		.get("/api/order")
 		.set("Authorization", `Bearer ${normieToken}`);
