@@ -31,20 +31,20 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	jest.setTimeout(60 * 1000 * 5);
 }
 
-// test("fail to create franchise", async () => {
-// 	const nonAdmin = await createRegularUser();
-// 	const nonAdminToken = await getAdminToken(nonAdmin);
-// 	const franchise = {
-// 		name: `MrPizza${randomName()}'s`,
-// 		admins: [],
-// 	};
-// 	const resp = await request(app)
-// 		.post("/api/franchise")
-// 		.set("Authorization", `Bearer ${nonAdminToken}`)
-// 		.send(franchise);
+test("fail to create franchise", async () => {
+	const nonAdmin = await createRegularUser();
+	const nonAdminToken = await getAdminToken(nonAdmin);
+	const franchise = {
+		name: `MrPizza${randomName()}'s`,
+		admins: [],
+	};
+	const resp = await request(app)
+		.post("/api/franchise")
+		.set("Authorization", `Bearer ${nonAdminToken}`)
+		.send(franchise);
 
-// 	expect(resp.status).not.toBe(200);
-// });
+	expect(resp.status).not.toBe(200);
+});
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	jest.setTimeout(60 * 1000 * 5);
