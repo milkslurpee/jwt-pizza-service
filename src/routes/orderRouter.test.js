@@ -11,9 +11,6 @@ const {
 
 let adminUser, adminToken, regularUser, normieToken;
 
-const testUser = { name: "pizza diner", email: "reg@test.com", password: "a" };
-let testUserAuthToken;
-
 test("get menu", async () => {
 	const menu = await request(app).get("/api/order/menu");
 	expect(menu.status).toBe(200);
