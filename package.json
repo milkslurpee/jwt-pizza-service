@@ -15,9 +15,9 @@
 		"supertest": "^6.3.4"
 	},
 	"scripts": {
-    "start": "cd src && node index.js",
-    "test": "jest",
-    "lint": "eslint ."
+		"start": "cd src && node index.js",
+		"test": "jest",
+		"lint": "eslint ."
 	},
 	"repository": {
 		"type": "git",
