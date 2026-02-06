@@ -17,10 +17,18 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 }
 
 test("get user", async () => {
-	const menu = await request(app)
+	const user = await request(app)
 		.get("/api/user/me")
 		.set("Authorization", `Bearer ${normieToken}`);
-	expect(menu.status).toBe(200);
+	expect(user.status).toBe(200);
+});
+
+test("change user", async () => {
+	const user = await request(app)
+		.put(`/api/user/${regularUser.id}`)
+		.set("Authorization", `Bearer ${normieToken}`)
+		.send(testUser);
+	expect(user.status).toBe(200);
 });
 
 beforeAll(async () => {
