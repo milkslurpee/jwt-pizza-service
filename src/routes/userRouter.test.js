@@ -4,9 +4,7 @@ const app = require("../service");
 const {
 	createAdminUser,
 	createRegularUser,
-	createFranchise,
 	getAdminToken,
-	randomName,
 } = require("./testHelper.js");
 
 const testUser = { name: "pizza diner", email: "reg@test.com", password: "a" };

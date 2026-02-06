@@ -3,9 +3,7 @@ const app = require("../service");
 const {
 	createAdminUser,
 	createRegularUser,
-	createFranchise,
 	getAdminToken,
-	randomName,
 	createOrder,
 } = require("./testHelper.js");
 
