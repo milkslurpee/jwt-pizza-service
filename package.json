@@ -19,7 +19,7 @@
 	},
 	"scripts": {
 		"start": "cd src && node index.js",
-		"test": "jest --coverage",
+		"test": "jest",
 		"lint": "eslint ."
 	},
 	"repository": {
