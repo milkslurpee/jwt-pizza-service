@@ -2,9 +2,28 @@ const request = require("supertest");
 const app = require("../service");
 const { Role, DB } = require("../database/database.js");
 const franchiseRouter = require("./franchiseRouter");
+const {
+	createAdminUser,
+	createRegularUser,
+	createFranchise,
+	getAdminToken,
+	randomName,
+} = require("./testHelper.js");
 
 const testUser = { name: "pizza diner", email: "reg@test.com", password: "a" };
 let adminUser, adminToken;
+
+test("get all franchise", async () => {
+	const franchise = await request(app).get("/api/franchise");
+	expect(franchise.status).toBe(200);
+});
+
+test("get a user's franchises", async () => {
+	const franchises = await request(app)
+		.get(`/api/franchise/${adminUser.id}`)
+		.set("Authorization", `Bearer ${adminToken}`);
+	expect(franchises.status).toBe(200);
+});
 
 test("create franchise", async () => {
 	const franchise = await createFranchise(adminToken);
@@ -15,38 +34,41 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	jest.setTimeout(60 * 1000 * 5);
 }
 
-async function createAdminUser() {
-	let user = { password: "toomanysecrets", roles: [{ role: Role.Admin }] };
-	user.name = randomName();
-	user.email = user.name + "@admin.com";
-
-	user = await DB.addUser(user);
-	return { ...user, password: "toomanysecrets" };
-}
-
-async function createFranchise(adminToken) {
+test("fail to create franchise", async () => {
+	const nonAdmin = await createRegularUser();
+	const nonAdminToken = await getAdminToken(nonAdmin);
 	const franchise = {
 		name: `MrPizza${randomName()}'s`,
 		admins: [],
 	};
 	const resp = await request(app)
 		.post("/api/franchise")
-		.set("Authorization", `Bearer ${adminToken}`)
+		.set("Authorization", `Bearer ${nonAdminToken}`)
 		.send(franchise);
-	return resp.body;
+
+	expect(resp.status).not.toBe(200);
+});
+
+if (process.env.VSCODE_INSPECTOR_OPTIONS) {
+	jest.setTimeout(60 * 1000 * 5);
 }
 
-async function getAdminToken(adminUser) {
-	const loginRes = await request(app).put("/api/auth").send({
-		email: adminUser.email,
-		password: adminUser.password,
-	});
-	return loginRes.body.token;
-}
+test("delete franchise", async () => {
+	const franchise = await createFranchise(adminToken);
 
-function randomName() {
-	return Math.random().toString(36).substring(2, 12);
-}
+	const deleteFranchise = await request(app)
+		.delete(`/api/franchise/${franchise.id}`)
+		.set("Authorization", `Bearer ${adminToken}`);
+	expect(deleteFranchise.status).toBe(200);
+	expect(deleteFranchise.body.message).toBe("franchise deleted");
+});
+
+test("fail to delete franchise", async () => {
+	const response = await request(app)
+		.delete(`/api/franchise/not-a-number`)
+		.set("Authorization", `Bearer ${adminToken}`);
+	expect(response.status).not.toBe(200);
+});
 
 beforeAll(async () => {
 	adminUser = await createAdminUser();
