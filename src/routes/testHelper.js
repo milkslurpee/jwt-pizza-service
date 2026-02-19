@@ -32,7 +32,7 @@ async function createFranchise(adminToken) {
 	return resp.body;
 }
 
-async function getAdminToken(adminUser) {
+async function getUserToken(adminUser) {
 	const loginRes = await request(app).put("/api/auth").send({
 		email: adminUser.email,
 		password: adminUser.password,
@@ -67,7 +67,7 @@ module.exports = {
 	createAdminUser,
 	createRegularUser,
 	createFranchise,
-	getAdminToken,
+	getUserToken,
 	randomName,
 	createOrder,
 };

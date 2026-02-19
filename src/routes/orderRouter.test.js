@@ -3,7 +3,7 @@ const app = require("../service");
 const {
 	createAdminUser,
 	createRegularUser,
-	getAdminToken,
+	getUserToken,
 	createOrder,
 } = require("./testHelper.js");
 
@@ -45,6 +45,6 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 beforeAll(async () => {
 	adminUser = await createAdminUser();
 	regularUser = await createRegularUser();
-	adminToken = await getAdminToken(adminUser);
-	normieToken = await getAdminToken(regularUser);
+	adminToken = await getUserToken(adminUser);
+	normieToken = await getUserToken(regularUser);
 });

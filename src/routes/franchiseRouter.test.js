@@ -4,7 +4,7 @@ const {
 	createAdminUser,
 	createRegularUser,
 	createFranchise,
-	getAdminToken,
+	getUserToken,
 	randomName,
 } = require("./testHelper.js");
 
@@ -33,7 +33,7 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 
 test("fail to create franchise", async () => {
 	const nonAdmin = await createRegularUser();
-	const nonAdminToken = await getAdminToken(nonAdmin);
+	const nonAdminToken = await getUserToken(nonAdmin);
 	const franchise = {
 		name: `MrPizza${randomName()}'s`,
 		admins: [],
@@ -69,5 +69,5 @@ test("fail to delete franchise", async () => {
 
 beforeAll(async () => {
 	adminUser = await createAdminUser();
-	adminToken = await getAdminToken(adminUser);
+	adminToken = await getUserToken(adminUser);
 });
