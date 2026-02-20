@@ -107,35 +107,31 @@ class DB {
 		}
 	}
 
-	async getUsers({ offset, limit, name }) {
+	// Adding to the DB class
+	async getUsers(page = 0, limit = 10, nameFilter = "*") {
 		const connection = await this.getConnection();
 		try {
-			const query =
-				name === "*"
-					? "SELECT id, name, email FROM user LIMIT ? OFFSET ?"
-					: "SELECT id, name, email FROM user WHERE name LIKE ? LIMIT ? OFFSET ?";
-
-			const params =
-				name === "*" ? [limit, offset] : [`%${name}%`, limit, offset];
-			const users = await this.query(connection, query, params);
-			return users;
-		} finally {
-			connection.end();
-		}
-	}
-
-	async countUsers(name) {
-		const connection = await this.getConnection();
-		try {
-			const query =
-				name === "*"
-					? "SELECT COUNT(*) AS total FROM user"
-					: "SELECT COUNT(*) AS total FROM user WHERE name LIKE ?";
-
-			const params = name === "*" ? [] : [`%${name}%`];
-
-			const result = await this.query(connection, query, params);
-			return result[0].total;
+			const offset = page * limit;
+			const likeFilter = nameFilter.replace(/\*/g, "%");
+			const rows = await this.query(
+				connection,
+				`SELECT id, name, email FROM user WHERE name LIKE ? LIMIT ${limit + 1} OFFSET ${offset}`,
+				[likeFilter],
+			);
+			const more = rows.length > limit;
+			const users = more ? rows.slice(0, limit) : rows;
+			for (const user of users) {
+				const roleResult = await this.query(
+					connection,
+					`SELECT role, objectId FROM userRole WHERE userId=?`,
+					[user.id],
+				);
+				user.roles = roleResult.map((r) => ({
+					role: r.role,
+					objectId: r.objectId || undefined,
+				}));
+			}
+			return { users, more };
 		} finally {
 			connection.end();
 		}

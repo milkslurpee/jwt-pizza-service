@@ -95,43 +95,14 @@ userRouter.get(
 	"/",
 	authRouter.authenticateToken,
 	asyncHandler(async (req, res) => {
-		try {
-			console.log("Authenticated User:", req.user);
-			console.log("Pagination params:", {
-				page: req.query.page,
-				limit: req.query.limit,
-			});
-			console.log("Filter name:", req.query.name);
-
-			if (req.user.isRole(Role.Admin)) {
-				const { page = 1, limit = 10, name = "*" } = req.query;
-				const offset = (page - 1) * limit;
-
-				// Log the pagination details
-				console.log("Pagination params:", { page, limit, offset });
-				console.log("Filter name:", name);
-
-				const users = await DB.getUsers({ offset, limit, name });
-				const totalUsers = await DB.countUsers(name);
-				const more = offset + limit < totalUsers;
-
-				console.log("Fetched users:", users);
-				res.json({
-					users,
-					more,
-				});
-			} else {
-				console.log("Unauthorized access attempt");
-				return res
-					.status(403)
-					.json({ message: "Unauthorized, login as Admin" });
-			}
-		} catch (error) {
-			console.error("Error in listUsers route:", error);
-			return res
-				.status(500)
-				.json({ message: "Internal server error", error: error.message });
+		if (!req.user.isRole(Role.Admin)) {
+			return res.status(403).json({ message: "unauthorized" });
 		}
+		const page = parseInt(req.query.page) || 0;
+		const limit = parseInt(req.query.limit) || 10;
+		const name = req.query.name || "*";
+		const result = await DB.getUsers(page, limit, name);
+		res.json(result);
 	}),
 );
 
