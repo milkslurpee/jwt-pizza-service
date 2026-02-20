@@ -49,6 +49,25 @@ test("list users as admin", async () => {
 	expect(res.status).toBe(200);
 });
 
+test("delete users unauthorized", async () => {
+	const res = await request(app).delete(`/api/user/${normieUser.id}`);
+	expect(res.status).toBe(401);
+});
+
+test("delete users attempted by a loser normie", async () => {
+	const res = await request(app)
+		.delete(`/api/user/${adminUser.id}`)
+		.set("Authorization", `Bearer ${normieToken}`);
+	expect(res.status).toBe(403);
+});
+
+test("delete users as admin", async () => {
+	const res = await request(app)
+		.delete(`/api/user/${normieUser.id}`)
+		.set("Authorization", `Bearer ${adminToken}`);
+	expect(res.status).toBe(200);
+});
+
 beforeAll(async () => {
 	normieUser = await createRegularUser();
 	normieToken = await getUserToken(normieUser);

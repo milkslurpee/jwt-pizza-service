@@ -94,6 +94,9 @@ userRouter.delete(
 	"/:userId",
 	authRouter.authenticateToken,
 	asyncHandler(async (req, res) => {
+		if (!req.user.isRole(Role.Admin)) {
+			return res.status(403).json({ message: "unauthorized" });
+		}
 		const userId = Number(req.params.userId);
 		if (isNaN(userId)) {
 			throw new StatusCodeError("Invalid user ID", 400);
