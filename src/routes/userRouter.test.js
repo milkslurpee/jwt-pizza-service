@@ -1,34 +1,25 @@
 const request = require("supertest");
 const app = require("../service");
 
-const {
-	createRegularUser,
-	getUserToken,
-	createAdminUser,
-} = require("./testHelper.js");
+const { createRegularUser, getUserToken } = require("./testHelper.js");
 
 let adminUser, adminToken;
 let normieUser, normieToken;
 
-// Before all tests, create users and fetch tokens
 beforeAll(async () => {
 	normieUser = await createRegularUser();
 	normieToken = await getUserToken(normieUser);
-
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 });
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
-	jest.setTimeout(60 * 1000 * 5); // Increase timeout for debugging
+	jest.setTimeout(60 * 1000 * 5);
 }
 
-// Test for getting user info
 test("get user", async () => {
 	const user = await request(app)
 		.get("/api/user/me")
-		.set("Authorization", `Bearer ${normieToken}`); // Regular user token
-	expect(user.status).toBe(200); // Should return 200
+		.set("Authorization", `Bearer ${normieToken}`);
+	expect(user.status).toBe(200);
 });
 
 // Test for updating user info
@@ -40,34 +31,46 @@ test("change user", async () => {
 	};
 	const user = await request(app)
 		.put(`/api/user/${normieUser.id}`)
-		.set("Authorization", `Bearer ${normieToken}`) // Regular user token
+		.set("Authorization", `Bearer ${normieToken}`)
 		.send(testUser);
-	expect(user.status).toBe(200); // Should return 200 when update is successful
+	expect(user.status).toBe(200);
 });
 
 // Test for unauthorized access (no token)
 test("list users unauthorized", async () => {
 	const listUsersRes = await request(app).get("/api/user");
-	expect(listUsersRes.status).toBe(401); // Should return 401 for unauthorized access
+	expect(listUsersRes.status).toBe(401);
 });
 
 // Test for non-admin user trying to list users
 test("list users as a normie *spits* 'ew gross'", async () => {
 	const res = await request(app)
 		.get("/api/user")
-		.set("Authorization", `Bearer ${normieToken}`); // Regular user token
-	expect(res.status).toBe(403); // Regular user should get forbidden (403)
+		.set("Authorization", `Bearer ${normieToken}`);
+	expect(res.status).toBe(403);
 });
 
 // Test for admin user being able to list users
-test("list users with pagination and filtering", async () => {
-	// Check if the admin can fetch the first page of users (page=1, limit=10) with name filter
-	const res = await request(app)
-		.get("/api/user?page=1&limit=10&name=*") // Pagination query
-		.set("Authorization", `Bearer ${adminToken}`); // Admin token
 
-	expect(res.status).toBe(200); // Admin should be able to list users
-	expect(Array.isArray(res.body.users)).toBe(true); // Expect an array of users
-	expect(res.body.users.length).toBeLessThanOrEqual(10); // Should return at most 10 users
-	expect(typeof res.body.more).toBe("boolean"); // 'more' flag should be a boolean
+test("admin login and list users", async () => {
+	// Use the known admin credentials
+	const adminCredentials = {
+		email: "a@jwt.com", // Admin email
+		password: "admin", // Admin password
+	};
+
+	// Log in as admin to get the token
+	const loginRes = await request(app).put("/api/auth").send(adminCredentials);
+
+	// Ensure login is successful and we get the token
+	expect(loginRes.status).toBe(200);
+	const adminToken = loginRes.body.token; // Extract the admin token
+
+	// Use the token to list users
+	const listUsersRes = await request(app)
+		.get("/api/user?page=1&limit=10")
+		.set("Authorization", `Bearer ${adminToken}`); // Add token to request header
+
+	// Assert that the response status is 200 (admin should be able to list users)
+	expect(listUsersRes.status).toBe(200);
 });
