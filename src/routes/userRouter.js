@@ -98,9 +98,6 @@ userRouter.delete(
 			return res.status(403).json({ message: "unauthorized" });
 		}
 		const userId = Number(req.params.userId);
-		if (isNaN(userId)) {
-			throw new StatusCodeError("Invalid user ID", 400);
-		}
 		await DB.deleteUser(userId);
 		res.json({ message: "user deleted" });
 	}),
