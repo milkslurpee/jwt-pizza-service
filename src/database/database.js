@@ -162,11 +162,30 @@ class DB {
 	}
 
 	async deleteUser(userId) {
+		console.log(`Attempting to delete user with ID: ${userId}`);
 		const connection = await this.getConnection();
 		try {
-			await this.query(connection, `DELETE FROM userrole WHERE userId=?`, [userId]);
-			const result = await this.query(connection, `DELETE FROM user WHERE id=?`, [userId]);
-			return result.affectedRows === 1;
+			const userroleResult = await this.query(
+				connection,
+				`DELETE FROM userrole WHERE userId=?`,
+				[userId],
+			);
+			console.log(`Deleted ${userroleResult.affectedRows} rows from userrole`);
+
+			const userResult = await this.query(
+				connection,
+				`DELETE FROM user WHERE id=?`,
+				[userId],
+			);
+			console.log(`Deleted ${userResult.affectedRows} rows from user`);
+
+			if (userResult.affectedRows === 0) {
+				console.log(`No user found with ID: ${userId}`);
+				throw new Error(`User with id ${userId} not found`);
+			}
+		} catch (error) {
+			console.error(`Error in deleteUser:`, error);
+			throw error;
 		} finally {
 			connection.end();
 		}
