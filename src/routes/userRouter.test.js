@@ -62,10 +62,17 @@ test("delete users attempted by a loser normie", async () => {
 });
 
 test("delete users as admin", async () => {
-	const tempUser = await createRegularUser();
+	// Create a brand new user JUST for deletion
+	// This user has no orders, no associations
+	const freshUser = await createRegularUser();
+	const freshToken = await getUserToken(freshUser);
+
+	// Important: Don't create any orders with this user!
+
 	const res = await request(app)
-		.delete(`/api/user/${tempUser.id}`)
+		.delete(`/api/user/${freshUser.id}`)
 		.set("Authorization", `Bearer ${adminToken}`);
+
 	expect(res.status).toBe(200);
 });
 
