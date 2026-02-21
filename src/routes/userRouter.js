@@ -1,5 +1,5 @@
 const express = require("express");
-const { asyncHandler } = require("../endpointHelper.js");
+const { asyncHandler, StatusCodeError } = require("../endpointHelper.js");
 const { DB, Role } = require("../database/database.js");
 const { authRouter, setAuth } = require("./authRouter.js");
 
@@ -99,7 +99,7 @@ userRouter.delete(
 		}
 		const userId = Number(req.params.userId);
 		if (isNaN(userId)) {
-			return res.status(400).json({ message: "Error: no user id found" });
+			throw new StatusCodeError("Invalid user ID", 400);
 		}
 		await DB.deleteUser(userId);
 		res.json({ message: "user deleted" });
