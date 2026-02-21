@@ -62,8 +62,11 @@ test("delete users attempted by a loser normie", async () => {
 });
 
 test("delete users as admin", async () => {
+	const tempUser = await createRegularUser();
+	const tempToken = await getUserToken(tempUser);
+
 	const res = await request(app)
-		.delete(`/api/user/${normieUser.id}`)
+		.delete(`/api/user/${tempUser.id}`)
 		.set("Authorization", `Bearer ${adminToken}`);
 	expect(res.status).toBe(200);
 });
