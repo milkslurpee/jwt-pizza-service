@@ -12,7 +12,7 @@ let adminUser, adminToken;
 let normieUser, normieToken;
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
-	jest.setTimeout(60 * 1000 * 5); // 5 minutes
+	jest.setTimeout(60 * 1000);
 }
 
 test("get user", async () => {
