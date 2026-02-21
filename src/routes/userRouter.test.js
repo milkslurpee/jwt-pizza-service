@@ -16,23 +16,14 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 }
 
 test("delete users as admin", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
-
+	const tempUser = await createRegularUser();
 	const res = await request(app)
-		.delete(`/api/user/${normieUser.id}`)
+		.delete(`/api/user/${tempUser.id}`)
 		.set("Authorization", `Bearer ${adminToken}`);
-
 	expect(res.status).toBe(200);
 });
 
 test("get user", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const user = await request(app)
 		.get("/api/user/me")
 		.set("Authorization", `Bearer ${normieToken}`);
@@ -40,10 +31,6 @@ test("get user", async () => {
 });
 
 test("change user", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const user = await request(app)
 		.put(`/api/user/${normieUser.id}`)
 		.set("Authorization", `Bearer ${normieToken}`)
@@ -57,10 +44,6 @@ test("list users unauthorized", async () => {
 });
 
 test("list users attempted by a loser normie", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const res = await request(app)
 		.get("/api/user")
 		.set("Authorization", `Bearer ${normieToken}`);
@@ -68,10 +51,6 @@ test("list users attempted by a loser normie", async () => {
 });
 
 test("list users as admin", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const res = await request(app)
 		.get("/api/user")
 		.set("Authorization", `Bearer ${adminToken}`);
@@ -79,21 +58,20 @@ test("list users as admin", async () => {
 });
 
 test("delete users unauthorized", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const res = await request(app).delete(`/api/user/${normieUser.id}`);
 	expect(res.status).toBe(401);
 });
 
 test("delete users attempted by a loser normie", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
 	const res = await request(app)
 		.delete(`/api/user/${adminUser.id}`)
 		.set("Authorization", `Bearer ${normieToken}`);
 	expect(res.status).toBe(403);
+});
+
+beforeAll(async () => {
+	normieUser = await createRegularUser();
+	normieToken = await getUserToken(normieUser);
+	adminUser = await createAdminUser();
+	adminToken = await getUserToken(adminUser);
 });
