@@ -91,7 +91,7 @@ userRouter.put(
 
 // deleteUser
 userRouter.delete(
-	"/:userId",
+	"/:id",
 	authRouter.authenticateToken,
 	asyncHandler(async (req, res) => {
 		if (!req.user.isRole(Role.Admin)) {
