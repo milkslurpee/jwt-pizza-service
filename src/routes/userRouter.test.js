@@ -15,6 +15,19 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	jest.setTimeout(60 * 1000 * 5); // 5 minutes
 }
 
+test("delete users as admin", async () => {
+	normieUser = await createRegularUser();
+	normieToken = await getUserToken(normieUser);
+	adminUser = await createAdminUser();
+	adminToken = await getUserToken(adminUser);
+
+	const res = await request(app)
+		.delete(`/api/user/${normieUser.id}`)
+		.set("Authorization", `Bearer ${adminToken}`);
+
+	expect(res.status).toBe(200);
+});
+
 test("get user", async () => {
 	normieUser = await createRegularUser();
 	normieToken = await getUserToken(normieUser);
@@ -83,17 +96,4 @@ test("delete users attempted by a loser normie", async () => {
 		.delete(`/api/user/${adminUser.id}`)
 		.set("Authorization", `Bearer ${normieToken}`);
 	expect(res.status).toBe(403);
-});
-
-test("delete users as admin", async () => {
-	normieUser = await createRegularUser();
-	normieToken = await getUserToken(normieUser);
-	adminUser = await createAdminUser();
-	adminToken = await getUserToken(adminUser);
-
-	const res = await request(app)
-		.delete(`/api/user/${normieUser.id}`)
-		.set("Authorization", `Bearer ${adminToken}`);
-
-	expect(res.status).toBe(200);
 });
