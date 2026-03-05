@@ -1,7 +1,7 @@
 # Check if host is provided as a command line argument
 if [ -z "$1" ]; then
   echo "Usage: $0 <host>"
-  echo "Example: $0 https://pizza-service.mrpizzajohn.com"
+  echo "Example: $0 http://localhost:3000"
   exit 1
 fi
 host=$1
