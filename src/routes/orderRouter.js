@@ -3,7 +3,6 @@ const config = require('../config.js');
 const { Role, DB } = require('../database/database.js');
 const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
-const metrics = require('../metrics');
 
 const orderRouter = express.Router();
 
@@ -41,6 +40,7 @@ orderRouter.docs = [
   },
 ];
 
+// getMenu
 orderRouter.get(
   '/menu',
   asyncHandler(async (req, res) => {
@@ -48,6 +48,7 @@ orderRouter.get(
   })
 );
 
+// addMenuItem
 orderRouter.put(
   '/menu',
   authRouter.authenticateToken,
@@ -55,12 +56,14 @@ orderRouter.put(
     if (!req.user.isRole(Role.Admin)) {
       throw new StatusCodeError('unable to add menu item', 403);
     }
+
     const addMenuItemReq = req.body;
     await DB.addMenuItem(addMenuItemReq);
     res.send(await DB.getMenu());
   })
 );
 
+// getOrders
 orderRouter.get(
   '/',
   authRouter.authenticateToken,
@@ -69,45 +72,23 @@ orderRouter.get(
   })
 );
 
+// createOrder
 orderRouter.post(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
-    const start = Date.now();
     const orderReq = req.body;
-    try {
-      const order = await DB.addDinerOrder(req.user, orderReq);
-      const pizzasCount = order.items.length;
-      let revenue = 0;
-      const r = await fetch(`${config.factory.url}/api/order`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${config.factory.apiKey}`,
-        },
-        body: JSON.stringify({
-          diner: { id: req.user.id, name: req.user.name, email: req.user.email },
-          order,
-        }),
-      });
-      const latency = Date.now() - start;
-      const j = await r.json();
-      if (r.ok) {
-        revenue = order.items.reduce((sum, item) => sum + item.price, 0);
-        metrics.recordPizzaPurchase(true, latency, revenue, pizzasCount);
-        res.send({ order, followLinkToEndChaos: j.reportUrl, jwt: j.jwt });
-      } else {
-        metrics.recordPizzaPurchase(false, latency, 0, pizzasCount);
-        res.status(500).send({
-          message: 'Failed to fulfill order at factory',
-          followLinkToEndChaos: j.reportUrl,
-        });
-      }
-    } catch (err) {
-      const latency = Date.now() - start;
-      const pizzasCount = err instanceof StatusCodeError ? 0 : (req.body?.items?.length || 0);
-      metrics.recordPizzaPurchase(false, latency, 0, pizzasCount);
-      throw err;
+    const order = await DB.addDinerOrder(req.user, orderReq);
+    const r = await fetch(`${config.factory.url}/api/order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${config.factory.apiKey}` },
+      body: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
+    });
+    const j = await r.json();
+    if (r.ok) {
+      res.send({ order, followLinkToEndChaos: j.reportUrl, jwt: j.jwt });
+    } else {
+      res.status(500).send({ message: 'Failed to fulfill order at factory', followLinkToEndChaos: j.reportUrl });
     }
   })
 );
