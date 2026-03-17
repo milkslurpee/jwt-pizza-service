@@ -1,7 +1,6 @@
 const config = require('./config');
 const os = require('os');
 
-// In‑memory counters
 let httpCounts = { GET: 0, POST: 0, PUT: 0, DELETE: 0 };
 let totalRequestLatency = 0;
 let requestCount = 0;
@@ -13,7 +12,7 @@ let pizzaRevenue = 0;
 let pizzaLatencyTotal = 0;
 let pizzaLatencyCount = 0;
 
-let activeUsers = new Set();
+let activeUsersSet = new Set();
 
 function getSystemMetrics() {
   return {
@@ -28,8 +27,7 @@ function requestTracker(req, res, next) {
 
   const start = Date.now();
   res.on('finish', () => {
-    const latency = Date.now() - start;
-    totalRequestLatency += latency;
+    totalRequestLatency += Date.now() - start;
     requestCount++;
   });
 
@@ -52,53 +50,166 @@ function recordPizzaPurchase(success, latencyMs, revenue, pizzasCount = 1) {
 }
 
 function recordActiveUser(userId) {
-  activeUsers.add(userId);
+  activeUsersSet.add(userId);
 }
 
 function buildPayload() {
   const ts = Date.now() * 1_000_000;
   const source = config.metrics.source;
-  const streams = [];
 
-  const addMetric = (metric, value, extraLabels = {}) => {
-    if (value !== 0) {
-      streams.push({
-        stream: { source, metric, ...extraLabels },
-        values: [[ts, value.toString()]],
-      });
-    }
+  const dataPoint = (value) => ({
+    asDouble: value,
+    timeUnixNano: ts,
+    attributes: [{ key: 'source', value: { stringValue: source } }],
+  });
+
+  const scopeMetrics = {
+    scope: {},
+    metrics: [],
   };
 
   for (const [method, count] of Object.entries(httpCounts)) {
-    addMetric('http_requests', count, { method });
+    if (count > 0) {
+      scopeMetrics.metrics.push({
+        name: 'http_requests_total',
+        unit: '1',
+        sum: {
+          dataPoints: [{
+            ...dataPoint(count),
+            attributes: [
+              { key: 'source', value: { stringValue: source } },
+              { key: 'method', value: { stringValue: method } },
+            ],
+          }],
+          aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+          isMonotonic: true,
+        },
+      });
+    }
   }
 
   if (requestCount > 0) {
-    addMetric('request_latency_avg_ms', totalRequestLatency / requestCount);
+    scopeMetrics.metrics.push({
+      name: 'request_latency_avg',
+      unit: 'ms',
+      gauge: {
+        dataPoints: [dataPoint(totalRequestLatency / requestCount)],
+      },
+    });
   }
 
-  addMetric('auth_attempts', authSuccess, { result: 'success' });
-  addMetric('auth_attempts', authFailure, { result: 'failure' });
+  if (authSuccess > 0) {
+    scopeMetrics.metrics.push({
+      name: 'auth_attempts_total',
+      unit: '1',
+      sum: {
+        dataPoints: [{
+          ...dataPoint(authSuccess),
+          attributes: [
+            { key: 'source', value: { stringValue: source } },
+            { key: 'result', value: { stringValue: 'success' } },
+          ],
+        }],
+        aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+        isMonotonic: true,
+      },
+    });
+  }
+  if (authFailure > 0) {
+    scopeMetrics.metrics.push({
+      name: 'auth_attempts_total',
+      unit: '1',
+      sum: {
+        dataPoints: [{
+          ...dataPoint(authFailure),
+          attributes: [
+            { key: 'source', value: { stringValue: source } },
+            { key: 'result', value: { stringValue: 'failure' } },
+          ],
+        }],
+        aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+        isMonotonic: true,
+      },
+    });
+  }
 
-  addMetric('pizza_sold', pizzaSold);
-  addMetric('pizza_failed', pizzaFailed);
-  addMetric('pizza_revenue', pizzaRevenue);
+  if (pizzaSold > 0) {
+    scopeMetrics.metrics.push({
+      name: 'pizza_sold_total',
+      unit: '1',
+      sum: {
+        dataPoints: [dataPoint(pizzaSold)],
+        aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+        isMonotonic: true,
+      },
+    });
+  }
+
+  if (pizzaFailed > 0) {
+    scopeMetrics.metrics.push({
+      name: 'pizza_failed_total',
+      unit: '1',
+      sum: {
+        dataPoints: [dataPoint(pizzaFailed)],
+        aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+        isMonotonic: true,
+      },
+    });
+  }
+
+  if (pizzaRevenue > 0) {
+    scopeMetrics.metrics.push({
+      name: 'pizza_revenue_total',
+      unit: '1',
+      sum: {
+        dataPoints: [dataPoint(pizzaRevenue)],
+        aggregationTemporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE',
+        isMonotonic: true,
+      },
+    });
+  }
+
   if (pizzaLatencyCount > 0) {
-    addMetric('pizza_latency_avg_ms', pizzaLatencyTotal / pizzaLatencyCount);
+    scopeMetrics.metrics.push({
+      name: 'pizza_latency_avg',
+      unit: 'ms',
+      gauge: {
+        dataPoints: [dataPoint(pizzaLatencyTotal / pizzaLatencyCount)],
+      },
+    });
   }
 
   const sys = getSystemMetrics();
-  addMetric('system_cpu_percent', sys.cpu);
-  addMetric('system_memory_percent', sys.mem);
+  scopeMetrics.metrics.push({
+    name: 'system_cpu_percent',
+    unit: '%',
+    gauge: { dataPoints: [dataPoint(sys.cpu)] },
+  });
+  scopeMetrics.metrics.push({
+    name: 'system_memory_percent',
+    unit: '%',
+    gauge: { dataPoints: [dataPoint(sys.mem)] },
+  });
 
-  addMetric('active_users', activeUsers.size);
+  scopeMetrics.metrics.push({
+    name: 'active_users',
+    unit: '1',
+    gauge: { dataPoints: [dataPoint(activeUsersSet.size)] },
+  });
 
-  return { streams };
+  return {
+    resourceMetrics: [
+      {
+        resource: {},
+        scopeMetrics: [scopeMetrics],
+      },
+    ],
+  };
 }
 
 async function sendMetrics() {
   const payload = buildPayload();
-  if (payload.streams.length === 0) return;
+  if (payload.resourceMetrics[0].scopeMetrics[0].metrics.length === 0) return;
 
   const { endpointUrl, accountId, apiKey } = config.metrics;
   const auth = Buffer.from(`${accountId}:${apiKey}`).toString('base64');
@@ -112,20 +223,11 @@ async function sendMetrics() {
       },
       body: JSON.stringify(payload),
     });
-    if (res.ok) {
-      httpCounts = { GET: 0, POST: 0, PUT: 0, DELETE: 0 };
-      totalRequestLatency = 0;
-      requestCount = 0;
-      authSuccess = 0;
-      authFailure = 0;
-      pizzaSold = 0;
-      pizzaFailed = 0;
-      pizzaRevenue = 0;
-      pizzaLatencyTotal = 0;
-      pizzaLatencyCount = 0;
-      activeUsers.clear();
-    } else {
+
+    if (!res.ok) {
       console.error('Metrics send failed', await res.text());
+    } else {
+      activeUsersSet.clear();
     }
   } catch (err) {
     console.error('Metrics error', err);
