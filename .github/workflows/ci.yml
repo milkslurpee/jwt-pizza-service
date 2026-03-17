@@ -5,7 +5,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   build:
     name: Build
@@ -57,10 +56,10 @@ jobs:
               apiKey: '${{ secrets.FACTORY_API_KEY }}',
             },
             metrics: {
-              source: 'jwt-pizza-service-dev',            # dev environment
+              source: 'jwt-pizza-service',
               endpointUrl: '${{ secrets.METRICS_ENDPOINT_URL }}',
               apiKey: '${{ secrets.METRICS_API_KEY }}',
-              accountId: '${{ secrets.METRICS_ACCOUNT_ID }}',
+              accountId: '${{ secrets.METRICS_ACCOUNT_ID_KEY }}',
             },
           };" > src/config.js
 
@@ -86,12 +85,10 @@ jobs:
           cp Dockerfile dist
           cp -r src/* dist
           cp *.json dist
-          # Replace database credentials with production secrets
           sed -i "s/root/${{ secrets.DB_USERNAME }}/g" dist/config.js
           sed -i "s/tempdbpassword/${{ secrets.DB_PASSWORD }}/g" dist/config.js
           sed -i "s/127.0.0.1/${{ secrets.DB_HOSTNAME }}/g" dist/config.js
-          # Switch metrics source from dev to production
-          sed -i "s/jwt-pizza-service-dev/jwt-pizza-service/g" dist/config.js
+
 
       - name: Update distribution artifact
         uses: actions/upload-artifact@v4
@@ -99,6 +96,8 @@ jobs:
           name: package
           path: dist/
 
+
+          
   deploy:
     runs-on: ubuntu-latest
     permissions:
