@@ -95,7 +95,7 @@ orderRouter.post(
       });
       const latency = Date.now() - start;
       const j = await r.json();
-      logger.log('factory_response', {
+      logger.log('info', 'factory_response', {
         statusCode: r.status,
         responseBody: j,
       });
