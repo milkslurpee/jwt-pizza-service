@@ -445,14 +445,16 @@ class DB {
 	}
 
 	async query(connection, sql, params) {
-		logger.dbLogger(sql);
-		try {
-			const [results] = await connection.execute(sql, params);
-			return results;
-		} catch (err) {
-			logger.error('db', { sql, params, error: err.message });
-			throw err;
-		}
+	try {
+		const [results] = await connection.execute(sql, params);
+		// Log the SQL and parameters as a structured object
+		logger.log('info', 'db', { sql, params });
+		return results;
+	} catch (err) {
+		// Log the error with context
+		logger.log('error', 'db', { sql, params, error: err.message });
+		throw err;
+	}
 	}
 
 	async getID(connection, key, value, table) {
