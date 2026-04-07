@@ -70,10 +70,25 @@ orderRouter.get(
   })
 );
 
+let enableChaos = false;
+orderRouter.put(
+  '/chaos/:state',
+  authRouter.authenticateToken,
+  asyncHandler(async (req, res) => {
+    if (req.user.isRole(Role.Admin)) {
+      enableChaos = req.params.state === 'true';
+    }
+    res.json({ chaos: enableChaos });
+  })
+);
+
 orderRouter.post(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    if (enableChaos && Math.random() < 0.5) {
+      throw new StatusCodeError('Chaos monkey', 500);
+    }
     const start = Date.now();
     const orderReq = req.body;
     try {
