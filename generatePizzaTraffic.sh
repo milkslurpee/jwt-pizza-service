@@ -9,7 +9,7 @@ host=$1
 
 cleanup() {
   echo "Terminating background processes..."
-  kill $pid1 $pid2 $pid3 2>/dev/null
+  kill $(jobs -p) 2>/dev/null
   exit 0
 }
 trap cleanup SIGINT
@@ -23,36 +23,38 @@ login() {
   echo "$response" | jq -r '.token'
 }
 
-# 1) Request menu every 3 seconds
-while true; do
-  status=$(execute_curl "$host/api/order/menu")
-  echo "Requesting menu... $status"
-  sleep 3
-done &
-pid1=$!
-
-# 2) Invalid login attempt every 25 seconds
-while true; do
-  status=$(execute_curl -X PUT "$host/api/auth" -d '{"email":"unknown@jwt.com", "password":"bad"}' -H 'Content-Type: application/json')
-  echo "Logging in with invalid credentials... $status"
-  sleep 25
-done &
-pid2=$!
-
-# 3) Diner: login, order ONE pizza, logout, repeat
-while true; do
-  token=$(login "d@jwt.com" "diner")
-  echo "Login diner... $([ -z "$token" ] && echo "false" || echo "true")"
+order_pizza() {
+  local token=$1
   status=$(execute_curl -X POST "$host/api/order" \
     -H 'Content-Type: application/json' \
     -d '{"franchiseId": 1, "storeId":1, "items":[{ "menuId": 1, "description": "Veggie", "price": 0.0038 }]}' \
     -H "Authorization: Bearer $token")
   echo "Bought a pizza... $status"
-  sleep 20
-  status=$(execute_curl -X DELETE "$host/api/auth" -H "Authorization: Bearer $token")
-  echo "Logging out diner... $status"
-  sleep 30
-done &
-pid3=$!
+}
 
-wait $pid1 $pid2 $pid3
+# Run 10 diner loops in parallel, each ordering every ~60 seconds
+for i in {1..10}; do
+  while true; do
+    token=$(login "d@jwt.com" "diner")
+    order_pizza "$token"
+    sleep 6
+  done &
+done
+
+# Request menu every 3 seconds
+while true; do
+  status=$(execute_curl "$host/api/order/menu")
+  echo "Requesting menu... $status"
+  sleep 3
+done &
+
+# Invalid login every 25 seconds
+while true; do
+  execute_curl -X PUT "$host/api/auth" \
+    -d '{"email":"unknown@jwt.com", "password":"bad"}' \
+    -H 'Content-Type: application/json' > /dev/null
+  echo "Invalid login attempt"
+  sleep 25
+done &
+
+wait
