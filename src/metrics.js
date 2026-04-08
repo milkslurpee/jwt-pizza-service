@@ -45,8 +45,11 @@ function recordPizzaPurchase(success, latencyMs, revenue, pizzasCount = 1) {
   } else {
     pizzaFailed++;
   }
-  pizzaLatencyTotal += latencyMs;
-  pizzaLatencyCount++;
+  // Only include in latency average if a real latency was measured (> 0)
+  if (latencyMs > 0) {
+    pizzaLatencyTotal += latencyMs;
+    pizzaLatencyCount++;
+  }
 }
 
 function recordActiveUser(userId) {
@@ -227,6 +230,12 @@ async function sendMetrics() {
     if (!res.ok) {
       console.error('Metrics send failed', await res.text());
     } else {
+      // Reset per-interval latency accumulators so averages reflect only the current window
+      totalRequestLatency = 0;
+      requestCount = 0;
+      pizzaLatencyTotal = 0;
+      pizzaLatencyCount = 0;
+
       activeUsersSet.clear();
     }
   } catch (err) {

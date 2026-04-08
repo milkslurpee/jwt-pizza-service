@@ -86,11 +86,14 @@ orderRouter.post(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = Date.now();
+
     if (enableChaos && Math.random() < 0.5) {
-      metrics.recordPizzaPurchase(false, 0, 0, 1);
+      const latency = Date.now() - start;
+      metrics.recordPizzaPurchase(false, latency, 0, 1);
       throw new StatusCodeError('Chaos monkey', 500);
     }
-    const start = Date.now();
+
     const orderReq = req.body;
     try {
       const order = await DB.addDinerOrder(req.user, orderReq);
