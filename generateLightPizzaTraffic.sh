@@ -49,17 +49,17 @@ order_pizza() {
 }
 
 echo "================================================"
-echo " JWT Pizza Traffic Simulator"
+echo " JWT Pizza Traffic Simulator (Light)"
 echo " Target: $host"
 echo " Started: $(date)"
 echo "================================================"
 echo ""
 
 # -------------------------------------------------------
-# 0. SETUP — register 10 unique diner accounts
+# 0. SETUP — register 3 unique diner accounts
 # -------------------------------------------------------
 echo "Registering diner accounts..."
-for i in {1..10}; do
+for i in {1..3}; do
   register $i
   echo "  Registered diner$i@jwt.com"
 done
@@ -67,9 +67,9 @@ echo "All accounts ready."
 echo ""
 
 # -------------------------------------------------------
-# 1. STEADY NORMAL ORDERS — 10 concurrent diners, ~every 6s
+# 1. STEADY NORMAL ORDERS — 3 diners, ~1 order/min each (~3/min total)
 # -------------------------------------------------------
-for i in {1..10}; do
+for i in {1..3}; do
   while true; do
     token=$(login "diner$i@jwt.com" "diner${i}pass")
     if [ -n "$token" ] && [ "$token" != "null" ]; then
@@ -79,33 +79,19 @@ for i in {1..10}; do
     else
       echo "[Order  | diner $i ] LOGIN FAILED — $(date +%H:%M:%S)"
     fi
-    sleep 6
+    sleep 60
   done &
 done
 
 # -------------------------------------------------------
-# 2. MENU REQUESTS — every 5s
+# 2. MENU REQUESTS — every 40s (~1.5/min)
 # -------------------------------------------------------
 while true; do
   status=$(execute_curl "$host/api/order/menu")
   echo "[Menu   |         ] HTTP $status — $(date +%H:%M:%S)"
-  sleep 25
+  sleep 40
 done &
 
 # -------------------------------------------------------
-# 3. ORDER HISTORY FETCH — every 10s
-# -------------------------------------------------------
-while true; do
-  token=$(login "diner1@jwt.com" "diner1pass")
-  if [ -n "$token" ] && [ "$token" != "null" ]; then
-    status=$(execute_curl -X GET "$host/api/order" \
-      -H "Authorization: Bearer $token")
-    echo "[History|         ] HTTP $status — $(date +%H:%M:%S)"
-    logout "$token"
-  else
-    echo "[History| LOGIN FAIL] — $(date +%H:%M:%S)"
-  fi
-  sleep 45
-done &
-
-wait
+# 3. ORDER HISTORY FETCH — every 2 min (light)
+# -----
